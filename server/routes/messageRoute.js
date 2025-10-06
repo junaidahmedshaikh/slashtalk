@@ -1,6 +1,10 @@
 const express = require("express");
 const router = express.Router();
-const { getConversationHistoryAPI, getRecentConversationsAPI, getGroupConversationHistoryAPI } = require("../controllers/messageController");
+const {
+  getConversationHistoryAPI,
+  getRecentConversationsAPI,
+  getGroupConversationHistoryAPI,
+} = require("../controllers/messageController");
 const authMiddleware = require("../middlewares/authMiddleware");
 
 // send message (for fallback; prefer socket)

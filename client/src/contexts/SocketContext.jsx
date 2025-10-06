@@ -18,11 +18,9 @@ export const SocketProvider = ({ children, userId, username }) => {
   const reconnectTimeoutRef = useRef(null);
   const currentRoomRef = useRef(null);
 
-  // Initialize socket connection
   useEffect(() => {
     if (!userId) return;
 
-    // Create socket with reconnection options
     const socket = io(BACKEND_BASE_URL, {
       reconnection: true,
       reconnectionDelay: 1000,
@@ -33,12 +31,9 @@ export const SocketProvider = ({ children, userId, username }) => {
 
     socketRef.current = socket;
 
-    // Connection event handlers
     socket.on("connect", () => {
-      //   console.log("Socket connected:", socket.id);
       setIsConnected(true);
 
-      // Rejoin previous room if exists
       if (currentRoomRef.current) {
         const { type, ...roomData } = currentRoomRef.current;
         if (type === "private") {
@@ -49,8 +44,7 @@ export const SocketProvider = ({ children, userId, username }) => {
       }
     });
 
-    socket.on("disconnect", (reason) => {
-      console.log("Socket disconnected:", reason);
+    socket.on("disconnect", () => {
       setIsConnected(false);
     });
 
@@ -59,31 +53,19 @@ export const SocketProvider = ({ children, userId, username }) => {
       setIsConnected(false);
     });
 
-    socket.on("reconnect", (attemptNumber) => {
-      console.log("Socket reconnected after", attemptNumber, "attempts");
+    socket.on("reconnect", () => {
       setIsConnected(true);
     });
 
-    socket.on("reconnect_attempt", (attemptNumber) => {
-      console.log("Reconnection attempt:", attemptNumber);
-    });
-
-    socket.on("reconnect_error", (error) => {
-      console.error("Reconnection error:", error);
-    });
-
     socket.on("reconnect_failed", () => {
-      console.error("Reconnection failed");
+      console.error("Socket reconnection failed");
     });
 
-    // Handle page visibility changes
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        //   console.log("Page visible - checking connection");
         if (!socket.connected) {
           socket.connect();
         }
-        // Rejoin current room
         if (currentRoomRef.current) {
           const { type, ...roomData } = currentRoomRef.current;
           if (type === "private") {
@@ -92,14 +74,11 @@ export const SocketProvider = ({ children, userId, username }) => {
             socket.emit("joinGroup", roomData);
           }
         }
-      } else {
-        //   console.log("Page hidden");
       }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
-    // Handle focus/blur
     const handleFocus = () => {
       if (!socket.connected) {
         socket.connect();
@@ -108,7 +87,6 @@ export const SocketProvider = ({ children, userId, username }) => {
 
     window.addEventListener("focus", handleFocus);
 
-    // Cleanup
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("focus", handleFocus);
@@ -122,11 +100,9 @@ export const SocketProvider = ({ children, userId, username }) => {
     };
   }, [userId]);
 
-  // Join private chat room
   const joinPrivateChat = (senderId, receiverId, username) => {
     if (!socketRef.current) return;
 
-    // Leave previous room
     if (currentRoomRef.current?.type === "group") {
       socketRef.current.emit("leaveGroup", {
         groupId: currentRoomRef.current.groupId,
@@ -135,7 +111,6 @@ export const SocketProvider = ({ children, userId, username }) => {
       socketRef.current.emit("leaveRoom");
     }
 
-    // Join new room
     currentRoomRef.current = {
       type: "private",
       username,
@@ -150,11 +125,9 @@ export const SocketProvider = ({ children, userId, username }) => {
     });
   };
 
-  // Join group chat room
   const joinGroupChat = (userId, groupId, username) => {
     if (!socketRef.current) return;
 
-    // Leave previous room
     if (currentRoomRef.current?.type === "group") {
       socketRef.current.emit("leaveGroup", {
         groupId: currentRoomRef.current.groupId,
@@ -163,7 +136,6 @@ export const SocketProvider = ({ children, userId, username }) => {
       socketRef.current.emit("leaveRoom");
     }
 
-    // Join new room
     currentRoomRef.current = {
       type: "group",
       username,
